@@ -1,36 +1,46 @@
 import './App.css';
+import { connect } from 'react-redux';
+import { requestRobots, setSearchField } from '../action';
 import CardList from '../Components/CardList';
 import React, {Component} from 'react';
 import Scroll from '../Components/Scroll';
 import Search from '../Components/Search';
 
-class App extends Component{
-  constructor(){
-    super();
-    this.state = {
-      robots: [],
-      searchField: ''
-    }
-  }
+const mapStateToProps = (state) =>{
+  return {
+    searchField: state.searchRobots.searchField,
+    robots: state.requestRobots.robots,
+    isPending: state.requestRobots.isPending
+  };
+}
 
-  onSearchChange = (event) => {
-    this.setState({searchField: event.target.value});
+// dispatch the DOM changes to call an action. note mapStateToProps returns object, mapDispatchToProps returns function
+// the function returns an object then uses connect to change the data from redecers.
+const mapDispatchToProps = (dispatch) => {
+  return {
+    onSearchChange: (event) => dispatch(setSearchField(event.target.value)),
+    onRequestRobots: () => dispatch(requestRobots())
   }
+}
+
+class App extends Component{
 
   componentDidMount(){
-    fetch('https://jsonplaceholder.typicode.com/users')
-      .then(response=> response.json())
-      .then(users => {this.setState({ robots: users})});
+    this.props.onRequestRobots();
   }
 
   render(){
-    const filteredRobots = this.state.robots.filter(robo => robo.name.toLowerCase().includes(this.state.searchField.toLowerCase()));
+    const {robots, searchField, onSearchChange, isPending} = this.props;
+    const filteredRobots = robots.filter(robo => robo.name.toLowerCase().includes(searchField.toLowerCase()));
+
     return (
       <div className="tc">
         <h1 className='f1'>RoboFriends</h1>
-        <Search searchChange = {this.onSearchChange}></Search>
+        <Search searchChange = {onSearchChange}></Search>
         <Scroll>
-        <CardList robots={filteredRobots}></CardList>
+          {isPending ? <h1> Loading </h1> : 
+          <CardList robots={filteredRobots}></CardList>
+          }
         </Scroll>
       </div>
     );
@@ -38,4 +48,4 @@ class App extends Component{
 
 }
 
-export default App;
+export default connect(mapStateToProps, mapDispatchToProps)(App);
